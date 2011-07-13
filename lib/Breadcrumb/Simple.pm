@@ -2,16 +2,16 @@ package Breadcrumb::Simple;
 use strict;
 use warnings;
 use Text::MicroTemplate ();
-use Carp ();
+use Carp                ();
 
-our $VERSION = '0.02';
+our $VERSION = '0.10';
 
 sub new {
     my $class = shift;
-    my %args = (
+    my %args  = (
         separator => '>>',
-        format    => '<a href="<?=$_{url}?>"><?=$_{title}?></a>',
-        @_ .
+        format    => '<a href="<?=$_[0]?>"><?=$_[1]?></a>',
+        @_
     );
 
     $args{data_list} = [];
@@ -27,7 +27,6 @@ sub push {
         push @{ $self->{data_list} }, $data;
     }
     else {
-        # Exception 
         Carp::croak "Can't use this type.";
     }
 }
@@ -42,24 +41,47 @@ sub row {
     return $self->{data_list};
 }
 
-sub render {
-    my $self = shift;
+sub clone {
+    my $self      = shift;
+    my $new_crumb = Breadcrumb::Simple->new(
+        separator => $self->{separator},
+        format    => $self->{format}
+    );
 
-    my @template;
-    my $renderer = Text::MicroTemplate::build_mt($self->{format});
     foreach my $data ( @{ $self->{data_list} } ) {
-        push $template, $renderer->(@$data)->as_string;
+        $new_crumb->push($data);
     }
 
-    return join $self->{separator}, @template;
+    return $new_crumb;
 }
 
+sub refresh {
+    my $self = shift;
+    $self->{data_list} = [];
+}
+
+sub render {
+    my $self = shift;
+    my %args = @_;
+
+    my $format    = $args{format}    ? $args{format}    : $self->{format};
+    my $separator = $args{separator} ? $args{separator} : $self->{separator};
+
+    my @template = ();
+    my $renderer = Text::MicroTemplate::build_mt($format);
+    foreach my $data ( @{ $self->{data_list} } ) {
+        CORE::push @template, $renderer->(@$data)->as_string;
+    }
+
+    return join $separator, @template;
+}
 1;
+
 __END__
 
 =head1 NAME
 
-Breadcrumb::Simple - Create breadcrumb list.
+Breadcrumb::Simple - Create a simple breadcrumb.
 
 =head1 SYNOPSIS
 
@@ -77,17 +99,49 @@ Breadcrumb::Simple - Create breadcrumb list.
 
 =head1 DESCRIPTION
 
-Breadcrumb::Simple is
+Breadcrumb::Simple is simple breadcrumb create module.
 
 =head1 METHOD
 
+=head2 $bs->new(%args)
+
+initialize Breadcrumb::Simple object.
+optional parameter is format and separator.
+format detail is L<Text::MicroTemplate> syntax.
+
 =head2 $bs->push($arrayref)
+
+push to data lists.
+please specify the param specified by the format.
+
+=head2 $bs->pop
+
+pop from data lists.
+
+=head2 $bs->row
+
+get the row. return arrayref(data lists).
+
+=head2 $bs->clone
+
+clone the this object. return new Breadcrumb::Simple.
+
+=head2 $bs->refresh
+
+refresh data lists.
+
+=head2 $bs->render(%args)
+
+returns a html of the combined list.
+optional parametor is format and separator.
 
 =head1 AUTHOR
 
-jiwasaki E<lt>jiwasaki {at} idac.co.jpE<gt>
+Iwasaki Junichi E<lt>lapis0896 {at} gmail.comE<gt>
 
 =head1 SEE ALSO
+
+L<Text::MicroTemplate>
 
 =head1 LICENSE
 
