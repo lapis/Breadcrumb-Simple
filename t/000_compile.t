@@ -10,6 +10,9 @@ isa_ok $bc, 'Breadcrumb::Simple';
 my @method = qw/
     push 
     pop
+    row
+    clone
+    refresh
     render
 /;
 
